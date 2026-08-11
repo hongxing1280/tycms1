@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		
+		
+		 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+      <!-- nav -->
+      <link rel="stylesheet" type="text/css" href="static/css/lanrenzhijia.css" media="all">
+       <link rel="stylesheet" type="text/css" href="static/css/main.css" media="all">
+      
+	  <script src="static/js/tongyong.js"></script>
+	 <script>document.write("<title>"+webname+"</title>");</script>
+	</head>
+	<body>
+		<div class="head_top">
+		       <div class="names">
+		       <span style="font-size:20px;"><script>document.write(webname);</script></span>
+		      </div>
+			 <!--<img src="images/logo.png" class="fl head_img" />-->
+			 
+	<div class="wrap pc_nav">
+	<!--导航-->
+		<ul id="nav">
+			<li>
+				<a href="">首&nbsp;页</a>
+			</li>
+			
+			<li>
+				<a href='about.html'>关于我们</a>
+			</li>
+            <li>
+				<a href="service.html">服务领域</a>
+
+				<ul>
+					<li class="submenuli">
+						<a href="service_1.html">营销网站建设</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_2.html'>全网搜索推广</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_3.html'>软件开发</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_4.html'>小程序</a>
+					</li>
+				</ul>
+			</li>
+			<li>
+				<a href='news.html'>新闻资讯</a>
+			</li>
+            <li>
+				<a href='contect.html'>联系我们</a>
+			</li>
+		</ul>
+	</div>
+		</div>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('#nav li').hover(function() {
+					$('ul', this).slideDown(200);
+					$(this).children('a:first').addClass("hov");
+				},
+				function() {
+					$('ul', this).slideUp(100);
+					$(this).children('a:first').removeClass("hov");
+				});
+		});
+	</script>
+	
+	<!--banner-->
+
+    <div class="banner">
+    	<img src="static/picture/banner1.jpg">
+    	<div class="clearfix"></div>
+    </div>
+	<div class="clearfix"></div>
+	<div class="main">
+		<h4 class="index_tit">服务领域</h4>
+		<img src="static/picture/sub1.png">
+		<div class="clearfix"></div>
+	</div>
+	
+	 <div class="banner">
+    	<img src="static/picture/sub2.jpg">
+    	<div class="clearfix"></div>
+    </div>
+	<div class="clearfix"></div>
+	<div class="main">
+		<h4 class="index_tit">新闻资讯</h4>
+		<div class="news_li">
+			<a href="arc1.html">
+			<h3>如何增加网站流量</h3>
+			<p>网站流量怎么增加？看看我们提高网站流量的方法，当然，如果您维护网站，则希望网站的流量增长。但如果不是呢？如果您网站的流量（略微）减少怎么办？......</p>
+			</a>
+		</div>
+		<div class="news_li">
+			<a href="arc2.html">
+			<h3>网站设计中的色彩心理学</h3>
+			<p>网站设计需要同时做几件事。比如必须确保网站的导航清晰。比如必须尽可能地引起互联网用户的注意。它必须轻轻地引导用户进入转换渠道，悄悄地敦促用户......</p>
+			</a>
+		</div>
+		<div class="news_li">
+			<a href="arc3.html">
+			<h3>避免破坏网站设计的常见问题</h3>
+			<p>在网站建设过程中，你花了很多时间在你的设计上。因此，您的设计看起来很棒。而且你的客户喜欢他们。但是，有些东西他们不会喜欢。这是一个编辑蠢事。......</p>
+			</a>
+		</div>
+		<div class="news_li">
+			<a href="arc4.html">
+			<h3>衡量游客访问网站体验好坏的7种方法</h3>
+			<p>访问者的意见和经验是网站建设成功的最重要因素之一。访问者喜欢的网站通常会成功，而访问者不喜欢的网站会很困难。所有网站所有者面临的挑战是确定访......</p>
+			</a>
+		</div>
+		<div class="clearfix"></div>
+	</div>
+	<div class="clearfix"></div>
+	
+	<div class="footer">
+		<div class="main">
+			<p class="footer_p">&copy;<script>document.write(webname);</script> &nbsp;&nbsp; 备案号：<a href="https://beian.miit.gov.cn/#/Integrated/index"><script>document.write(webbeian);</script></a>  &nbsp;&nbsp;地址：<script>document.write(webdizhi);</script>&nbsp;&nbsp;
+电话：<script>document.write(webhaoma);</script></p>
+		</div>
+	</div>
+	
+	
+		
+</body>
+</html>

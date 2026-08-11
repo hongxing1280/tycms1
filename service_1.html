@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+      <!-- nav -->
+      <link rel="stylesheet" type="text/css" href="static/css/lanrenzhijia.css" media="all">
+       <link rel="stylesheet" type="text/css" href="static/css/main.css" media="all">
+      <script type="text/javascript" src="static/js/jquery-1.6.2.min.js"></script>
+	  <script src="static/js/tongyong.js"></script>
+	  <script>document.write("<title>"+webname+"</title>");</script>
+	</head>
+	<body>
+		<div class="head_top">
+			<div class="names">
+		       <span style="font-size:20px;"><script>document.write(webname);</script></span>
+		      </div>
+			<div class="wrap pc_nav">
+	<!--导航-->
+		<ul id="nav">
+			<li>
+				<a href="index.html">首&nbsp;页</a>
+			</li>
+			
+			<li>
+				<a href='about.html'>关于我们</a>
+			</li>
+            <li>
+				<a href='service.html'>服务领域</a>
+
+				<ul>
+					<li class="submenuli">
+						<a href=''>营销网站建设</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_2.html'>全网搜索推广</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_3.html'>软件开发</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_4.html'>小程序</a>
+					</li>
+				</ul>
+			</li>
+			<li>
+				<a href='news.html'>新闻资讯</a>
+			</li>
+            <li>
+				<a href='contect.html'>联系我们</a>
+			</li>
+		</ul>
+	</div>
+		</div>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('#nav li').hover(function() {
+					$('ul', this).slideDown(200);
+					$(this).children('a:first').addClass("hov");
+				},
+				function() {
+					$('ul', this).slideUp(100);
+					$(this).children('a:first').removeClass("hov");
+				});
+		});
+	</script>
+	
+	<!--banner-->
+
+    <div class="banner">
+    	<img src="static/picture/banner1.jpg">
+    	<div class="clearfix"></div>
+    </div>
+	<div class="clearfix"></div>
+	<div class="main_body">
+		<h4 class="index_tit">营销网站建设</h4>
+		<img src="static/picture/sub4.jpg" class="margin0">
+		<!--<p class=" text1">
+			我们专注于网络科技行业的运用与开发，凭借自身对企业信息化的理解与多年的互联网实战经验，将成熟的互联网技术与市场的实际情况紧密结合，制定出一系列具有针对性的开发解决方案，为客户提供长期可靠的服务。我们旨在全力提升企业的形象，以为客户创造价值为自身的社会使命。
+		</br>稳定的北京网站建设专家团队，成功为上千家企业进行了网站建设服务，并优化产品流程，增强产品的易用性，用创意理念以及先进的html5技术塑造高品质网站。
+		</p>-->
+		<div class="clearfix"></div>
+	</div>
+	
+
+	<div class="footer">
+		<div class="main">
+			<p class="footer_p">&copy;<script>document.write(webname);</script> &nbsp;&nbsp; 备案号：<a href="https://beian.miit.gov.cn/#/Integrated/index"><script>document.write(webbeian);</script></a>  &nbsp;&nbsp;地址：<script>document.write(webdizhi);</script>&nbsp;&nbsp;
+电话：<script>document.write(webhaoma);</script></p>
+		</div>
+	</div>
+	
+	
+	</body>
+</html>

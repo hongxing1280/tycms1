@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+      <!-- nav -->
+      <link rel="stylesheet" type="text/css" href="static/css/lanrenzhijia.css" media="all">
+       <link rel="stylesheet" type="text/css" href="static/css/main.css" media="all">
+      <script type="text/javascript" src="static/js/jquery-1.6.2.min.js"></script>
+	  <script src="static/js/tongyong.js"></script>
+	  <script>document.write("<title>"+webname+"</title>");</script>
+	</head>
+	<body>
+		<div class="head_top">
+			<div class="names">
+		       <span style="font-size:20px;"><script>document.write(webname);</script></span>
+		      </div>
+			<div class="wrap pc_nav">
+	<!--导航-->
+		<ul id="nav">
+			<li>
+				<a href="index.html">首&nbsp;页</a>
+			</li>
+			
+			<li>
+				<a href='about.html'>关于我们</a>
+			</li>
+            <li>
+				<a href='service.html'>服务领域</a>
+
+				<ul>
+					<li class="submenuli">
+						<a href='service_1.html'>营销网站建设</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_2.html'>全网搜索推广</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_3.html'>软件开发</a>
+					</li>
+					<li class="submenuli">
+						<a href='service_4.html'>小程序</a>
+					</li>
+				</ul>
+			</li>
+			<li>
+				<a href='news.html'>新闻资讯</a>
+			</li>
+            <li>
+				<a href='contect.html'>联系我们</a>
+			</li>
+		</ul>
+	</div>
+		</div>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('#nav li').hover(function() {
+					$('ul', this).slideDown(200);
+					$(this).children('a:first').addClass("hov");
+				},
+				function() {
+					$('ul', this).slideUp(100);
+					$(this).children('a:first').removeClass("hov");
+				});
+		});
+	</script>
+	
+	<!--banner-->
+
+    <div class="banner">
+    	<img src="static/picture/banner1.jpg">
+    	<div class="clearfix"></div>
+    </div>
+	<div class="clearfix"></div>
+	<div class="main_body">
+		<h4 class="index_tit">衡量游客访问网站体验好坏的7种方法</h4>
+		<div class="news_p">
+			<p>　　访问者的意见和经验是网站建设成功的最重要因素之一。访问者喜欢的网站通常会成功，而访问者不喜欢的网站会很困难。所有网站所有者面临的挑战是确定访问者对网站体验的看法。在大多数情况下，您无法直接与访问者交谈以获取他们的意见。许多项目可以帮助您了解访问者对您网站的看法。有时您必须解释结果，因为许多外部影响也可以考虑在内。以下是小编认为可以帮助网站所有者理解访问者意见的7个因素。
+<br>
+　　网页跳出率
+<br>
+　　1、网页跳出率
+<br>
+　　跳出率是一个计算显示在仅查看一个页面后访问者离开网站的百分比。例如，如果有100位访问者访问网站，其中40位访问者在访问网站上的第2页之前离开，则跳出率为40％。可以针对整个网站或单个页面计算跳出率。大跳出率真的显示了什么？它可以让您了解访问者对您网站的第一印象。如果很高的比例在没有访问第二页的情况下离开，也许他们并不认为该网站真的对他们感兴趣。
+<br>
+　　有许多因素会影响跳出率，最重要的是会影响流量来源。某些类型的流量通常不会对查看网站上的多个页面感兴趣。一个例子是社交媒体流量，在看到一个页面并返回他们正在使用的社交媒体网站后，他们更有可能离开。
+<br>
+　　2、每次访问的页面浏览量
+<br>
+　　与跳出率有些相似的统计信息是访问者的平均网页浏览量。只需将页面浏览量除以访问者数量即可计算出此数字。它还会告诉您访问者是否立即离开，或者他们是否会停留一段时间并浏览网站。
+<br>
+　　每次访问的网页浏览量也会受到流量来源的影响。每次访问的大量页面浏览量都是访问者留在您的网站上并在页面之间导航的一个好兆头。小编发现每月跟踪平均页面浏览量会很有帮助。如果小编注意到平均值发生了重大变化，小编可以假设访客的体验已经改变了，无论是好的还是坏的。<br>
+　　
+			</p>
+		</div>
+
+	
+		<div class="clearfix"></div>
+	</div>
+	
+
+	<div class="footer">
+		<div class="main">
+			<p class="footer_p">&copy;<script>document.write(webname);</script> &nbsp;&nbsp; 备案号：<a href="https://beian.miit.gov.cn/#/Integrated/index"><script>document.write(webbeian);</script></a>  &nbsp;&nbsp;地址：<script>document.write(webdizhi);</script>&nbsp;&nbsp;
+电话：<script>document.write(webhaoma);</script></p>
+		</div>
+	</div>
+	
+	
+	</body>
+</html>
