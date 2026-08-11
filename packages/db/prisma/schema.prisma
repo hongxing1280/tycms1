@@ -1,0 +1,581 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SiteStatus {
+  ACTIVE
+  DISABLED
+  MAINTENANCE
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum SeoIndexStatus {
+  INDEX
+  NOINDEX
+  FOLLOW_ONLY
+}
+
+enum SportType {
+  FOOTBALL
+  BASKETBALL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  CANCELLED
+  POSTPONED
+}
+
+enum PromotionStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum PromotionSlot {
+  HOME_HERO
+  HOME_AFTER_NEWS
+  CATEGORY_TOP
+  CATEGORY_SIDEBAR
+  NEWS_TOP
+  NEWS_INLINE
+  NEWS_BOTTOM
+  GLOBAL_FLOAT
+}
+
+enum PromotionRenderStyle {
+  TEXT_LINK
+  IMAGE_BANNER
+  BUTTON
+  CARD
+  FLOATING
+}
+
+enum PromotionDevice {
+  ALL
+  DESKTOP
+  MOBILE
+}
+
+enum PageType {
+  HOME
+  NEWS_CATEGORY
+  NEWS_DETAIL
+  MATCH_CATEGORY
+  MATCH_DETAIL
+  VIDEO_CATEGORY
+  VIDEO_DETAIL
+  TAG
+  TEAM
+  LEAGUE
+  LIVE_ROOM
+  SEARCH
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  username     String      @unique
+  displayName  String
+  passwordHash String
+  status       String      @default("ACTIVE")
+  roles        UserRole[]
+  auditLogs    AuditLog[]
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String           @unique
+  description String?
+  status      String           @default("ACTIVE")
+  users       UserRole[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  action      String           @unique
+  label       String
+  group       String
+  description String?
+  status      String           @default("ACTIVE")
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model SiteGroup {
+  id              String   @id @default(cuid())
+  name            String
+  status          String   @default("ACTIVE")
+  remark          String?
+  newsUpdateCount Int      @default(0)
+  liveProductIds         String[]
+  enableDeviceSignalCheck Boolean @default(true)
+  pcSignalSourceEnabled   Boolean @default(true)
+  mobileSignalSourceEnabled Boolean @default(true)
+  randomSignalSourceEnabled Boolean @default(false)
+  randomProductNames     String[]
+  sites           Site[]
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Site {
+  id                String             @id @default(cuid())
+  groupId           String?
+  group             SiteGroup?         @relation(fields: [groupId], references: [id])
+  name              String
+  primaryDomain     String             @unique
+  primaryProtocol   String             @default("http")
+  status            SiteStatus         @default(ACTIVE)
+  templateId        String?
+  template          Template?          @relation(fields: [templateId], references: [id])
+  urlConfigId       String?
+  tdkConfigId       String?
+  newsUpdateCount   Int                @default(0)
+  showSignalSources Boolean            @default(false)
+  seoTitle          String?
+  seoKeywords       String?
+  seoDescription    String?
+  seoIndexStatus    SeoIndexStatus     @default(INDEX)
+  analyticsCode     String?
+  baiduPushToken    String?
+  baiduVerifyCode   String?
+  remark            String?
+  domains           SiteDomain[]
+  news              NewsArticle[]
+  liveReplays       LiveReplay[]
+  urlConfigs        UrlConfig[]
+  tdkConfigs        TdkConfig[]
+  matches           SportMatch[]
+  promotionTypes    PromotionType[]
+  promotionLinks    PromotionLink[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+
+  @@index([groupId, status])
+  @@index([templateId])
+  @@index([urlConfigId])
+  @@index([tdkConfigId])
+}
+
+model SiteDomain {
+  id        String   @id @default(cuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  domain    String   @unique
+  isPrimary Boolean  @default(false)
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Template {
+  id        String   @id @default(cuid())
+  name      String
+  key       String   @unique
+  folder    String
+  author    String?
+  coverUrl  String?
+  status    String   @default("ACTIVE")
+  sites     Site[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UrlConfig {
+  id          String   @id @default(cuid())
+  siteId      String?
+  site        Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  categoryIds String[]
+  rules       Json
+  name        String
+  status      String   @default("ACTIVE")
+  pageType    PageType?
+  pattern     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([siteId, pageType, status])
+}
+
+model TdkConfig {
+  id                  String   @id @default(cuid())
+  siteId              String?
+  site                Site?    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  categoryIds         String[]
+  rules               Json
+  name                String
+  status              String   @default("ACTIVE")
+  pageType            PageType?
+  titleTemplate       String?
+  keywordsTemplate    String?
+  descriptionTemplate String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([siteId, pageType, status])
+}
+
+model Category {
+  id          String        @id @default(cuid())
+  parentId    String?
+  parent      Category?     @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[]    @relation("CategoryTree")
+  name        String
+  slug        String
+  language    String        @default("zh-CN")
+  status      String        @default("ACTIVE")
+  description String?
+  sortOrder   Int           @default(0)
+  news        NewsArticle[]
+  liveReplays LiveReplay[]
+  promotionLinks PromotionLink[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([slug])
+  @@index([parentId, status])
+}
+
+model NewsArticle {
+  id               String        @id @default(cuid())
+  siteId           String
+  site             Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  categoryId       String
+  category         Category      @relation(fields: [categoryId], references: [id])
+  title            String
+  slug             String
+  summary          String?
+  content          String
+  coverImageUrl    String?
+  coverImageWidth  Int?
+  coverImageHeight Int?
+  author           String?
+  sourceName       String?
+  sourceUrl        String?
+  status           PublishStatus @default(DRAFT)
+  isTop            Boolean       @default(false)
+  publishedAt      DateTime?
+  seoTitle         String?
+  seoKeywords      String?
+  seoDescription   String?
+  canonicalUrl     String?
+  tags             NewsTag[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  deletedAt        DateTime?
+
+  @@unique([siteId, slug])
+  @@index([siteId, status, publishedAt])
+  @@index([categoryId, status, publishedAt])
+  @@index([isTop, publishedAt])
+}
+
+model Tag {
+  id        String    @id @default(cuid())
+  siteId    String
+  name      String
+  slug      String
+  news      NewsTag[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([siteId, slug])
+}
+
+model NewsTag {
+  newsId String
+  tagId  String
+  news   NewsArticle @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  tag    Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([newsId, tagId])
+}
+
+model LiveReplay {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  title       String
+  slug        String
+  createTime  DateTime
+  homeTeam    String
+  awayTeam    String
+  playUrl     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([siteId, slug])
+  @@index([siteId, categoryId, createTime])
+}
+
+model PromotionType {
+  id          String               @id @default(cuid())
+  siteId      String?
+  site        Site?                @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  key         String
+  name        String
+  slot        PromotionSlot
+  renderStyle PromotionRenderStyle @default(TEXT_LINK)
+  description String?
+  status      PromotionStatus      @default(ACTIVE)
+  sortOrder   Int                  @default(0)
+  links       PromotionLink[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([siteId, key])
+  @@index([siteId, slot, status])
+}
+
+model PromotionLink {
+  id              String          @id @default(cuid())
+  siteId          String
+  site            Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  promotionTypeId String
+  promotionType   PromotionType   @relation(fields: [promotionTypeId], references: [id])
+  title           String
+  subtitle        String?
+  targetUrl       String
+  imageUrl        String?
+  relNofollow     Boolean         @default(true)
+  relSponsored    Boolean         @default(true)
+  openInNewTab    Boolean         @default(true)
+  device          PromotionDevice @default(ALL)
+  weight          Int             @default(100)
+  startAt         DateTime?
+  endAt           DateTime?
+  status          PromotionStatus @default(ACTIVE)
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  @@index([siteId, status, sortOrder])
+  @@index([siteId, categoryId, status])
+  @@index([promotionTypeId, status])
+}
+
+model SportLeague {
+  id             String       @id @default(cuid())
+  sport          SportType
+  name           String
+  slug           String       @unique
+  englishName    String?
+  pinyin         String?
+  logoUrl        String?
+  country        String?
+  isHot          Boolean      @default(false)
+  externalSource String?
+  externalId     String?
+  lastSyncedAt   DateTime?
+  teams          SportTeam[]
+  matches        SportMatch[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([sport, isHot])
+}
+
+model SportTeam {
+  id             String       @id @default(cuid())
+  sport          SportType
+  leagueId       String?
+  league         SportLeague? @relation(fields: [leagueId], references: [id])
+  name           String
+  slug           String       @unique
+  englishName    String?
+  pinyin         String?
+  country        String?
+  logoUrl        String?
+  isHot          Boolean      @default(false)
+  externalSource String?
+  externalId     String?
+  lastSyncedAt   DateTime?
+  homeMatches    SportMatch[] @relation("HomeTeam")
+  awayMatches    SportMatch[] @relation("AwayTeam")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([sport, country, isHot])
+}
+
+model SportMatch {
+  id             String       @id @default(cuid())
+  siteId         String?
+  site           Site?        @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  sport          SportType
+  title          String
+  slug           String?
+  leagueId       String?
+  league         SportLeague? @relation(fields: [leagueId], references: [id])
+  homeTeamId     String?
+  homeTeam       SportTeam?   @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId     String?
+  awayTeam       SportTeam?   @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  isTop          Boolean      @default(false)
+  status         MatchStatus  @default(SCHEDULED)
+  startTime      DateTime
+  liveUrl        String?
+  replayUrl      String?
+  externalSource String?
+  externalId     String?
+  rawPayload     Json?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([siteId, sport, status, startTime])
+  @@index([leagueId, startTime])
+  @@index([homeTeamId, startTime])
+  @@index([awayTeamId, startTime])
+}
+
+model LiveProduct {
+  id                     String   @id @default(cuid())
+  name                   String
+  jumpUrl                String
+  ownerUserId            String?
+  supportWildcard        Boolean  @default(false)
+  wildcardLength         Int?
+  enableReplayJumpDomain Boolean @default(false)
+  replayJumpDomain       String?
+  roomSuffix             String?
+  appendRoomSuffix       Boolean  @default(false)
+  status                 String   @default("ACTIVE")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([status])
+}
+
+model SignalDomain {
+  id                  String   @id @default(cuid())
+  category            String?
+  name                String
+  supportWildcard     Boolean  @default(false)
+  wildcardPrefixCount Int?
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status])
+}
+
+model SignalSourceName {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  siteId    String?
+  url       String
+  alt       String?
+  mimeType  String?
+  size      Int?
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SeoSubmitLog {
+  id          String   @id @default(cuid())
+  siteId      String
+  url         String
+  provider    String
+  status      String
+  response    Json?
+  submittedAt DateTime @default(now())
+
+  @@index([siteId, provider, submittedAt])
+}
+
+model CacheInvalidationJob {
+  id        String   @id @default(cuid())
+  siteId    String?
+  tags      String[]
+  paths     String[]
+  reason    String
+  status    String   @default("PENDING")
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([siteId, status, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}

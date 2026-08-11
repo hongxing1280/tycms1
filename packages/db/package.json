@@ -1,0 +1,34 @@
+{
+  "name": "@sports/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "prebuild": "prisma generate --schema prisma/schema.prisma",
+    "build": "tsc --noEmit",
+    "lint": "eslint src prisma --ext .ts",
+    "pretypecheck": "prisma generate --schema prisma/schema.prisma",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema prisma/schema.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.1.0",
+    "@sports/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "prisma": "6.1.0",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.8"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

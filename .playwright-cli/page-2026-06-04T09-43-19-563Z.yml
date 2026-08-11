@@ -1,0 +1,251 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "24直播网首页" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - text: 24直播网
+      - navigation "主导航" [ref=e5]:
+        - link "首页" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - link "足球直播" [ref=e8] [cursor=pointer]:
+          - /url: /zhibo/football-live.html
+        - link "篮球直播" [ref=e10] [cursor=pointer]:
+          - /url: /zhibo/basketball-live.html
+        - link "赛事录像" [ref=e12] [cursor=pointer]:
+          - /url: /video/match-replay.html
+        - link "体育新闻" [ref=e14] [cursor=pointer]:
+          - /url: /news/sports-news.html
+  - main [ref=e15]:
+    - navigation "面包屑" [ref=e16]:
+      - text: 当前位置：
+      - link "首页" [ref=e18] [cursor=pointer]:
+        - /url: http://127.0.0.1:3000/
+      - generic [ref=e19]:
+        - generic [ref=e20]: ">"
+        - link "足球直播" [ref=e21] [cursor=pointer]:
+          - /url: http://127.0.0.1:3000/zhibo/football-live.html
+      - generic [ref=e22]:
+        - generic [ref=e23]: ">"
+        - link "捷丙：布杰约维采迪纳摩B队 vs 普里布拉姆B队" [ref=e24] [cursor=pointer]:
+          - /url: http://127.0.0.1:3000/zhibo/football-live/match-nmltfiqx-b-vs-b-13.html
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - article [ref=e27]:
+          - region "普里布拉姆B队" [ref=e28]:
+            - generic [ref=e29]:
+              - img "布杰约维采迪纳摩B队logo" [ref=e30]
+              - strong [ref=e31]: 布杰约维采迪纳摩B队
+            - generic [ref=e32]:
+              - emphasis [ref=e33]: 捷丙
+              - generic [ref=e34]:
+                - generic [ref=e35]: "0"
+                - generic [ref=e36]: 未开始
+                - generic [ref=e37]: "0"
+              - time [ref=e38]: 06-04 17:00
+            - generic [ref=e39]:
+              - img "普里布拉姆B队logo" [ref=e40]
+              - strong [ref=e41]: 普里布拉姆B队
+          - region "◎ 直播信号源" [ref=e42]:
+            - heading "◎ 直播信号源" [level=2] [ref=e43]
+            - link "测试名称" [ref=e45] [cursor=pointer]:
+              - /url: /live-product?productId=live-product-aa3jk0lo&mode=live&matchId=match-nmltfiqx&slug=b-vs-b-13&sport=FOOTBALL
+        - article [ref=e46]:
+          - heading "赛事介绍" [level=2] [ref=e48]
+          - generic [ref=e49]:
+            - paragraph [ref=e50]:
+              - strong [ref=e51]: 【赛事名称】
+              - text: 捷丙 布杰约维采迪纳摩B队 VS 普里布拉姆B队
+            - paragraph [ref=e52]:
+              - strong [ref=e53]: 【赛事分类】
+              - text: 捷丙
+            - paragraph [ref=e54]:
+              - strong [ref=e55]: 【开赛时间】
+              - text: 2026-06-04 17:00
+            - paragraph [ref=e56]:
+              - strong [ref=e57]: 【对阵双方】
+              - text: 布杰约维采迪纳摩B队 VS 普里布拉姆B队
+            - paragraph [ref=e58]:
+              - strong [ref=e59]: 【比赛详情】
+              - text: 北京时间：2026-06-04 17:00，捷丙【布杰约维采迪纳摩B队 VS 普里布拉姆B队】准时开始，喜欢看捷丙比赛的朋友可以提前收藏本页面，以免错过直播。
+            - generic [ref=e60]:
+              - heading "近5次交锋" [level=3] [ref=e61]
+              - paragraph [ref=e62]: 暂无相关赛事数据。
+            - generic [ref=e63]:
+              - heading "布杰约维采迪纳摩B队近5场战绩" [level=3] [ref=e64]
+              - paragraph [ref=e65]: 暂无相关赛事数据。
+            - generic [ref=e66]:
+              - heading "普里布拉姆B队近5场战绩" [level=3] [ref=e67]
+              - paragraph [ref=e68]: 暂无相关赛事数据。
+      - complementary "侧边栏" [ref=e69]:
+        - region "热门联赛" [ref=e70]:
+          - heading "热门联赛" [level=2] [ref=e72]
+          - generic [ref=e73]:
+            - link "WNBAlogo WNBA" [ref=e74] [cursor=pointer]:
+              - /url: /league/wnba.html
+              - img "WNBAlogo" [ref=e76]
+              - strong [ref=e77]: WNBA
+            - link "哥斯LDBlogo 哥斯LDB" [ref=e78] [cursor=pointer]:
+              - /url: /league/ldb.html
+              - img "哥斯LDBlogo" [ref=e80]
+              - strong [ref=e81]: 哥斯LDB
+            - link "美乙2logo 美乙2" [ref=e82] [cursor=pointer]:
+              - /url: /league/league-j1x53.html
+              - img "美乙2logo" [ref=e84]
+              - strong [ref=e85]: 美乙2
+            - link "美女业余logo 美女业余" [ref=e86] [cursor=pointer]:
+              - /url: /league/league-ggnrhg.html
+              - img "美女业余logo" [ref=e88]
+              - strong [ref=e89]: 美女业余
+            - link "美超logo 美超" [ref=e90] [cursor=pointer]:
+              - /url: /league/league-mh13.html
+              - img "美超logo" [ref=e92]
+              - strong [ref=e93]: 美超
+            - link "萨尔瓦多联logo 萨尔瓦多联" [ref=e94] [cursor=pointer]:
+              - /url: /league/league-vm2l4k.html
+              - img "萨尔瓦多联logo" [ref=e96]
+              - strong [ref=e97]: 萨尔瓦多联
+            - link "斐济联logo 斐济联" [ref=e98] [cursor=pointer]:
+              - /url: /league/league-fetzq.html
+              - img "斐济联logo" [ref=e100]
+              - strong [ref=e101]: 斐济联
+            - link "印德联logo 印德联" [ref=e102] [cursor=pointer]:
+              - /url: /league/league-coy5p.html
+              - img "印德联logo" [ref=e104]
+              - strong [ref=e105]: 印德联
+            - link "澳维女超logo 澳维女超" [ref=e106] [cursor=pointer]:
+              - /url: /league/league-em80r7.html
+              - img "澳维女超logo" [ref=e108]
+              - strong [ref=e109]: 澳维女超
+            - link "韩大学联logo 韩大学联" [ref=e110] [cursor=pointer]:
+              - /url: /league/league-jj9xfw.html
+              - img "韩大学联logo" [ref=e112]
+              - strong [ref=e113]: 韩大学联
+            - link "中甲logo 中甲" [ref=e114] [cursor=pointer]:
+              - /url: /league/league-dxut.html
+              - img "中甲logo" [ref=e116]
+              - strong [ref=e117]: 中甲
+            - link "新西北联logo 新西北联" [ref=e118] [cursor=pointer]:
+              - /url: /league/league-de9x64.html
+              - img "新西北联logo" [ref=e120]
+              - strong [ref=e121]: 新西北联
+            - link "新西南联logo 新西南联" [ref=e122] [cursor=pointer]:
+              - /url: /league/league-de9yp8.html
+              - img "新西南联logo" [ref=e124]
+              - strong [ref=e125]: 新西南联
+            - link "新西兰联logo 新西兰联" [ref=e126] [cursor=pointer]:
+              - /url: /league/league-de9n1v.html
+              - img "新西兰联logo" [ref=e128]
+              - strong [ref=e129]: 新西兰联
+            - link "澳威北U20logo 澳威北U20" [ref=e130] [cursor=pointer]:
+              - /url: /league/u20.html
+              - img "澳威北U20logo" [ref=e132]
+              - strong [ref=e133]: 澳威北U20
+            - link "澳北部女联logo 澳北部女联" [ref=e134] [cursor=pointer]:
+              - /url: /league/league-lmyllx.html
+              - img "澳北部女联logo" [ref=e136]
+              - strong [ref=e137]: 澳北部女联
+            - link "菲MPBLlogo 菲MPBL" [ref=e138] [cursor=pointer]:
+              - /url: /league/mpbl.html
+              - img "菲MPBLlogo" [ref=e140]
+              - strong [ref=e141]: 菲MPBL
+        - region "捷丙相关赛事" [ref=e142]:
+          - heading "捷丙相关赛事" [level=2] [ref=e144]
+          - paragraph [ref=e145]: 暂无相关赛事。
+        - region "最新新闻" [ref=e146]:
+          - heading "最新新闻" [level=2] [ref=e148]
+          - list [ref=e149]:
+            - listitem [ref=e150]:
+              - generic [ref=e151]: "1"
+              - link "半场：奥地利0-0突尼斯，汉尼拔、苏莱曼中框，莱默尔染红" [ref=e152] [cursor=pointer]:
+                - /url: /news/sports-news/0-0.html
+            - listitem [ref=e153]:
+              - generic [ref=e154]: "2"
+              - link "英媒：费内巴切两主席候选人均将格林伍德列为头号目标" [ref=e155] [cursor=pointer]:
+                - /url: /news/sports-news/news-g7zbgv.html
+            - listitem [ref=e156]:
+              - generic [ref=e157]: "3"
+              - link "记者：维拉中场摩根-罗杰斯是阿森纳今夏引援的重点目标之一" [ref=e158] [cursor=pointer]:
+                - /url: /news/sports-news/news-alxyit.html
+            - listitem [ref=e159]:
+              - generic [ref=e160]: "4"
+              - link "罗马诺：伊劳拉接近执教利物浦，只差合同细节" [ref=e161] [cursor=pointer]:
+                - /url: /news/sports-news/news-mpb73n.html
+            - listitem [ref=e162]:
+              - generic [ref=e163]: "5"
+              - link "土耳其4-0大胜北马其顿，巴里什-伊尔马兹破门，德尼兹-居尔建功" [ref=e164] [cursor=pointer]:
+                - /url: /news/sports-news/4-0.html
+            - listitem [ref=e165]:
+              - generic [ref=e166]: "6"
+              - link "官方：葡体签下威尼斯中场伊萨-敦比亚，设有违约金8000万欧" [ref=e167] [cursor=pointer]:
+                - /url: /news/sports-news/8000-2.html
+            - listitem [ref=e168]:
+              - generic [ref=e169]: "7"
+              - link "官方：吉达联合与主教练孔塞桑解约；卫冕冠军本赛季仅排第5" [ref=e170] [cursor=pointer]:
+                - /url: /news/sports-news/news-1q4uxz.html
+            - listitem [ref=e171]:
+              - generic [ref=e172]: "8"
+              - link "官方：库尔图瓦成为亨克股东，他曾出自亨克青训" [ref=e173] [cursor=pointer]:
+                - /url: /news/sports-news/news-eeq2fs.html
+        - region "录像推荐" [ref=e174]:
+          - heading "录像推荐" [level=2] [ref=e176]
+          - generic [ref=e177]:
+            - link "【瑞典甲】FC阿尔兰达VS耶夫勒 2026/06/02" [ref=e178] [cursor=pointer]:
+              - /url: /video/match-replay/replay-u4ul74.html
+              - strong [ref=e179]: 【瑞典甲】FC阿尔兰达VS耶夫勒
+              - time [ref=e180]: 2026/06/02
+            - link "【国际友谊】土耳其VS北马其顿 2026/06/02" [ref=e181] [cursor=pointer]:
+              - /url: /video/match-replay/replay-e9t3uh.html
+              - strong [ref=e182]: 【国际友谊】土耳其VS北马其顿
+              - time [ref=e183]: 2026/06/02
+            - link "【友谊赛】挪威VS瑞典 2026/06/02" [ref=e184] [cursor=pointer]:
+              - /url: /video/match-replay/replay-1502do.html
+              - strong [ref=e185]: 【友谊赛】挪威VS瑞典
+              - time [ref=e186]: 2026/06/02
+            - link "【瑞典甲】斯柯维德vs延雪平南区 2026/06/02" [ref=e187] [cursor=pointer]:
+              - /url: /video/match-replay/replay-exbxo0.html
+              - strong [ref=e188]: 【瑞典甲】斯柯维德vs延雪平南区
+              - time [ref=e189]: 2026/06/02
+            - link "【土伦杯】委内瑞拉U20 VS 加拿大U20 2026/06/02" [ref=e190] [cursor=pointer]:
+              - /url: /video/match-replay/replay-1ddgxz.html
+              - strong [ref=e191]: 【土伦杯】委内瑞拉U20 VS 加拿大U20
+              - time [ref=e192]: 2026/06/02
+            - link "【国际友谊】保加利亚vs黑山 2026/06/02" [ref=e193] [cursor=pointer]:
+              - /url: /video/match-replay/replay-13tzwl.html
+              - strong [ref=e194]: 【国际友谊】保加利亚vs黑山
+              - time [ref=e195]: 2026/06/02
+            - link "【伊拉克联】迪雅拉 VS 杜赫克 2026/06/02" [ref=e196] [cursor=pointer]:
+              - /url: /video/match-replay/replay-p8tor9.html
+              - strong [ref=e197]: 【伊拉克联】迪雅拉 VS 杜赫克
+              - time [ref=e198]: 2026/06/02
+            - link "【伊拉克联】巴格达石油VS纽罗兹 2026/06/02" [ref=e199] [cursor=pointer]:
+              - /url: /video/match-replay/replay-zh8gwv.html
+              - strong [ref=e200]: 【伊拉克联】巴格达石油VS纽罗兹
+              - time [ref=e201]: 2026/06/02
+            - link "【白俄甲 】沃尔纳平斯克 VS 泥瓦杜比滋诺 2026/06/02" [ref=e202] [cursor=pointer]:
+              - /url: /video/match-replay/replay-2eb1tk.html
+              - strong [ref=e203]: 【白俄甲 】沃尔纳平斯克 VS 泥瓦杜比滋诺
+              - time [ref=e204]: 2026/06/02
+            - link "【埃及联杯半决赛】马斯里VS泽德FC 2026/06/02" [ref=e205] [cursor=pointer]:
+              - /url: /video/match-replay/replay-1rtxx1.html
+              - strong [ref=e206]: 【埃及联杯半决赛】马斯里VS泽德FC
+              - time [ref=e207]: 2026/06/02
+        - region "友情链接" [ref=e208]:
+          - heading "友情链接" [level=2] [ref=e210]
+  - contentinfo [ref=e212]:
+    - generic [ref=e213]:
+      - navigation "页脚导航" [ref=e214]:
+        - link "捷丙" [ref=e215] [cursor=pointer]:
+          - /url: /zhibo/football-live/match-nmltfiqx-b-vs-b-13.html
+        - link "越南甲" [ref=e216] [cursor=pointer]:
+          - /url: /zhibo/football-live/match-s12z40hs-vs-1728.html
+        - link "东南亚U19" [ref=e217] [cursor=pointer]:
+          - /url: /zhibo/football-live/match-isyxzkwh-u19-u19-vs-u19-35.html
+        - link "奥丙" [ref=e218] [cursor=pointer]:
+          - /url: /zhibo/football-live/match-xv7z75ec-fc-vs-49.html
+        - link "澳东部联" [ref=e219] [cursor=pointer]:
+          - /url: /zhibo/basketball-live/match-1u05v50i-vs-1729.html
+      - paragraph [ref=e220]: 本站所有赛事入口均由用户收集或从搜索引擎整理获得，所有内容均来自互联网，我们自身不提供任何视频内容，如有侵犯您的权益请联系我们，我们会第一时间处理。
+      - paragraph [ref=e221]: Copyright © 2021 - 2024 All Rights Reserved 24直播网 版权所有
+      - link "网站地图" [ref=e222] [cursor=pointer]:
+        - /url: /sitemap.xml
+  - alert [ref=e223]

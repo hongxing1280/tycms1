@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@sports/config": ["packages/config/src/index.ts"],
+      "@sports/core": ["packages/core/src/index.ts"],
+      "@sports/db": ["packages/db/src/index.ts"],
+      "@sports/seo": ["packages/seo/src/index.ts"],
+      "@sports/templates": ["packages/templates/src/index.ts"],
+      "@sports/ui": ["packages/ui/src/index.ts"]
+    }
+  }
+}
