@@ -92,6 +92,8 @@ export const siteProtocolSchema = z.enum(['http', 'https']);
 export const adminLoginSchema = z.object({
   identity: z.string().min(2).max(120),
   password: z.string().min(6).max(120),
+  safeEntry: z.string().max(120).optional(),
+  totpCode: z.string().max(12).optional(),
 });
 
 export const adminUserCreateSchema = z.object({
@@ -103,6 +105,8 @@ export const adminUserCreateSchema = z.object({
   email: z.string().email().max(120).toLowerCase(),
   displayName: z.string().min(2).max(80),
   password: z.string().min(8).max(120),
+  totpEnabled: z.boolean().default(false),
+  totpSecret: z.string().max(128).optional(),
   status: activeStatusSchema.default('ACTIVE'),
   roleIds: z.array(z.string().min(1)).min(1).max(20),
 });
@@ -113,6 +117,19 @@ export const adminUserUpdateSchema = adminUserCreateSchema
   .extend({
     password: z.string().min(8).max(120).optional(),
   });
+
+export const securitySettingsUpdateSchema = z.object({
+  adminSafeEntry: z
+    .string()
+    .trim()
+    .min(3)
+    .max(80)
+    .regex(/^[A-Za-z0-9_-]+$/, '安全入口只能包含字母、数字、下划线和横线。')
+    .optional()
+    .or(z.literal('')),
+  totpRequired: z.boolean().optional(),
+  totpSecret: z.string().trim().max(128).optional().or(z.literal('')),
+});
 
 export const adminRoleCreateSchema = z.object({
   key: slugSchema.optional(),
@@ -477,6 +494,7 @@ export type LiveReplaySyncInput = z.infer<typeof liveReplaySyncSchema>;
 export type LiveReplayCreateInput = z.infer<typeof liveReplayCreateSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type AdminUserCreateInput = z.infer<typeof adminUserCreateSchema>;
+export type SecuritySettingsUpdateInput = z.infer<typeof securitySettingsUpdateSchema>;
 export type AdminRoleCreateInput = z.infer<typeof adminRoleCreateSchema>;
 export type AdminPermissionCreateInput = z.infer<typeof adminPermissionCreateSchema>;
 export type PromotionTypeCreateInput = z.infer<typeof promotionTypeCreateSchema>;

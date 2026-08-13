@@ -23,6 +23,7 @@ export type ScheduledTaskRunStatus = 'IDLE' | 'RUNNING' | 'SUCCESS' | 'FAILED';
 
 export type AdminPermissionAction =
   | 'admin:access'
+  | 'security:write'
   | 'user:read'
   | 'user:write'
   | 'role:read'
@@ -97,6 +98,8 @@ export type AdminUserRecord = {
   email: string;
   displayName: string;
   passwordHash: string;
+  totpEnabled?: boolean;
+  totpSecret?: string | null;
   status: AdminUserStatus;
   roleIds: string[];
   roles?: AdminRoleRecord[];
@@ -106,8 +109,19 @@ export type AdminUserRecord = {
   deletedAt?: Date | null;
 };
 
-export type AdminUserPublicRecord = Omit<AdminUserRecord, 'passwordHash'> & {
+export type AdminUserPublicRecord = Omit<AdminUserRecord, 'passwordHash' | 'totpSecret'> & {
+  totpSecret?: string | null;
+  totpSecretConfigured?: boolean;
   permissions: Array<AdminPermissionAction | string>;
+};
+
+export type SecuritySettingsRecord = {
+  id: string;
+  adminSafeEntry?: string | null;
+  totpRequired: boolean;
+  totpSecret?: string | null;
+  adminManaged?: boolean;
+  updatedAt: Date;
 };
 
 export type AdminSessionRecord = {

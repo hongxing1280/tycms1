@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cmsRepository } from '@sports/db';
+import { createTotpCode, generateTotpSecret } from '@sports/core';
 import { createApiServer } from '../server';
 
 const adminListRoutes = [
@@ -66,6 +67,241 @@ describe('admin routes smoke test', () => {
     expect(response.statusCode).toBe(200);
     expect(body.accessToken).toBeTruthy();
     expect(body.user?.username).toBe('admin');
+  });
+
+  it('rejects login when the configured safe entry is missing or wrong', async () => {
+    const app = createApiServer({ logger: false });
+    const originalEntry = process.env.ADMIN_SAFE_ENTRY;
+    process.env.ADMIN_SAFE_ENTRY = 'secure-door';
+
+    const rejected = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+      },
+    });
+    const accepted = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+        safeEntry: 'secure-door',
+      },
+    });
+
+    if (originalEntry === undefined) {
+      delete process.env.ADMIN_SAFE_ENTRY;
+    } else {
+      process.env.ADMIN_SAFE_ENTRY = originalEntry;
+    }
+    await app.close();
+
+    expect(rejected.statusCode).toBe(401);
+    expect(accepted.statusCode).toBe(200);
+  });
+
+  it('requires Google Authenticator code when global TOTP is enabled', async () => {
+    const app = createApiServer({ logger: false });
+    const originalSecret = process.env.ADMIN_TOTP_SECRET;
+    const secret = generateTotpSecret();
+    process.env.ADMIN_TOTP_SECRET = secret;
+
+    const rejected = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+        totpCode: '000000',
+      },
+    });
+    const accepted = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+        totpCode: createTotpCode(secret),
+      },
+    });
+
+    if (originalSecret === undefined) {
+      delete process.env.ADMIN_TOTP_SECRET;
+    } else {
+      process.env.ADMIN_TOTP_SECRET = originalSecret;
+    }
+    await app.close();
+
+    expect(rejected.statusCode).toBe(401);
+    expect(accepted.statusCode).toBe(200);
+  });
+
+  it('rejects invalid TOTP secrets without returning a server error', async () => {
+    const app = createApiServer({ logger: false });
+    const originalSecret = process.env.ADMIN_TOTP_SECRET;
+    process.env.ADMIN_TOTP_SECRET = 'not-a-base32-secret';
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+        totpCode: '123456',
+      },
+    });
+
+    if (originalSecret === undefined) {
+      delete process.env.ADMIN_TOTP_SECRET;
+    } else {
+      process.env.ADMIN_TOTP_SECRET = originalSecret;
+    }
+    await app.close();
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it('saves security settings and exposes the TOTP secret to security admins', async () => {
+    const app = createApiServer({ logger: false });
+    const headers = await loginHeaders(app);
+    const secret = generateTotpSecret();
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/admin/security-settings/security-settings',
+      headers,
+      payload: {
+        adminSafeEntry: 'secure-admin-test',
+        totpRequired: true,
+        totpSecret: secret,
+      },
+    });
+    const body = JSON.parse(response.body) as {
+      adminSafeEntry?: string;
+      totpRequired?: boolean;
+      totpSecret?: string;
+      totpSecretConfigured?: boolean;
+    };
+    const accepted = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: 'admin',
+        password: 'password123',
+        safeEntry: 'secure-admin-test',
+        totpCode: createTotpCode(secret),
+      },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: '/admin/security-settings/security-settings',
+      headers,
+      payload: {
+        adminSafeEntry: '',
+        totpRequired: false,
+        totpSecret: '',
+      },
+    });
+
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(body.adminSafeEntry).toBe('secure-admin-test');
+    expect(body.totpRequired).toBe(true);
+    expect(body.totpSecret).toBe(secret);
+    expect(body.totpSecretConfigured).toBe(true);
+    expect(accepted.statusCode).toBe(200);
+  });
+
+  it('creates per-user TOTP secrets when global Google verification is enabled', async () => {
+    const app = createApiServer({ logger: false });
+    const headers = await loginHeaders(app);
+    const globalSecret = generateTotpSecret();
+    const suffix = Date.now();
+    const username = `totp-user-${suffix}`;
+
+    const securityResponse = await app.inject({
+      method: 'PATCH',
+      url: '/admin/security-settings/security-settings',
+      headers,
+      payload: {
+        adminSafeEntry: '',
+        totpRequired: true,
+        totpSecret: globalSecret,
+      },
+    });
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/admin/users',
+      headers,
+      payload: {
+        username,
+        email: `${username}@sports.local`,
+        displayName: '验证器用户',
+        password: 'TotpUser123',
+        status: 'ACTIVE',
+        roleIds: ['role-editor'],
+      },
+    });
+    const created = JSON.parse(createResponse.body) as {
+      id?: string;
+      username?: string;
+      totpEnabled?: boolean;
+      totpSecret?: string;
+      totpSecretConfigured?: boolean;
+    };
+    const wrongGlobalCode = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: username,
+        password: 'TotpUser123',
+        totpCode: createTotpCode(globalSecret),
+      },
+    });
+    const accepted = await app.inject({
+      method: 'POST',
+      url: '/admin/auth/login',
+      payload: {
+        identity: username,
+        password: 'TotpUser123',
+        totpCode: createTotpCode(created.totpSecret ?? ''),
+      },
+    });
+    const listResponse = await app.inject({
+      method: 'GET',
+      url: '/admin/users?page=1&pageSize=100',
+      headers,
+    });
+
+    await app.inject({
+      method: 'PATCH',
+      url: '/admin/security-settings/security-settings',
+      headers,
+      payload: {
+        adminSafeEntry: '',
+        totpRequired: false,
+        totpSecret: '',
+      },
+    });
+
+    await app.close();
+
+    const listed = (JSON.parse(listResponse.body) as { data?: Array<{ id?: string; totpSecret?: string }> }).data?.find(
+      (user) => user.id === created.id,
+    );
+    expect(securityResponse.statusCode).toBe(200);
+    expect(createResponse.statusCode).toBe(200);
+    expect(created.username).toBe(username);
+    expect(created.totpEnabled).toBe(true);
+    expect(created.totpSecret).toBeTruthy();
+    expect(created.totpSecretConfigured).toBe(true);
+    expect(wrongGlobalCode.statusCode).toBe(401);
+    expect(accepted.statusCode).toBe(200);
+    expect(listed?.totpSecret).toBe(created.totpSecret);
   });
 
   it('returns paginated admin tables', async () => {

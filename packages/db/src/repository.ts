@@ -25,6 +25,7 @@ import {
   type PromotionSlot,
   type PromotionTypeRecord,
   type ScheduledTaskRecord,
+  type SecuritySettingsRecord,
   type SignalDomainRecord,
   type SignalSourceNameRecord,
   type SiteGroupRecord,
@@ -40,6 +41,8 @@ import {
   type UrlConfigRecord,
   type UrlDetailRuleRecord,
   type UrlRuleRecord,
+  generateTotpSecret,
+  verifyTotpCode,
 } from '@sports/core';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -50,6 +53,10 @@ import { createSeedData, type CmsStore } from './seed-data';
 type ListOptions = {
   page?: number;
   pageSize?: number;
+};
+
+type AdminUserListOptions = ListOptions & {
+  includeTotpSecret?: boolean;
 };
 
 type NewsListOptions = ListOptions & {
@@ -151,6 +158,7 @@ type RepositoryShape = {
 };
 
 const mutatingMethodPattern = /^(create|update|delete|bulkDelete|publish|authenticate|revoke)/;
+const securitySettingsId = 'security-settings';
 let lastLoadedMtime = 0;
 let resolvedStoreFilePath: string | undefined;
 let cachedStoreVersion = '';
@@ -169,11 +177,11 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
     store,
     syncFromDisk: (input?: { force?: boolean }) => syncStoreFromDisk(store, input),
     withMutationBatch: <T>(callback: () => T): T => callback(),
-    listAdminUsers: (options?: ListOptions) =>
+    listAdminUsers: (options?: AdminUserListOptions) =>
       paginate(
         store.adminUsers
           .filter((user) => !user.deletedAt)
-          .map((user) => serializeAdminUser(store, user)),
+          .map((user) => serializeAdminUser(store, user, { includeTotpSecret: options?.includeTotpSecret })),
         options,
       ),
     createAdminUser: (
@@ -182,6 +190,8 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
         email: string;
         displayName: string;
         password: string;
+        totpEnabled?: boolean;
+        totpSecret?: string | null;
         status: AdminUserRecord['status'];
         roleIds: string[];
       },
@@ -190,6 +200,9 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
       ensureUnique(store.adminUsers, 'username', input.username);
       ensureUnique(store.adminUsers, 'email', input.email);
       ensureRoleIds(store, input.roleIds);
+      const securitySettings = effectiveSecuritySettings(store);
+      const totpEnabled = securitySettings.totpRequired || Boolean(input.totpEnabled);
+      const totpSecret = normalizeNullableString(input.totpSecret) ?? (totpEnabled ? generateTotpSecret() : null);
 
       const record: AdminUserRecord = {
         id: id('user'),
@@ -197,6 +210,8 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
         email: input.email,
         displayName: input.displayName,
         passwordHash: hashPassword(input.password),
+        totpEnabled,
+        totpSecret,
         status: input.status,
         roleIds: input.roleIds,
         lastLoginAt: null,
@@ -205,8 +220,8 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
       };
 
       store.adminUsers.push(record);
-      const serialized = serializeAdminUser(store, record);
-      audit(store, actor, 'adminUser.create', 'AdminUser', record.id, undefined, serialized);
+      const serialized = serializeAdminUser(store, record, { includeTotpSecret: true });
+      audit(store, actor, 'adminUser.create', 'AdminUser', record.id, undefined, serializeAdminUser(store, record));
       return serialized;
     },
     updateAdminUser: (
@@ -216,6 +231,8 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
         email: string;
         displayName: string;
         password: string;
+        totpEnabled: boolean;
+        totpSecret: string | null;
         status: AdminUserRecord['status'];
         roleIds: string[];
       }>,
@@ -233,10 +250,21 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
       }
 
       const before = serializeAdminUser(store, record);
-      const { password, ...rest } = input;
-      Object.assign(record, rest, password ? { passwordHash: hashPassword(password) } : {}, { updatedAt: new Date() });
-      const serialized = serializeAdminUser(store, record);
-      audit(store, actor, 'adminUser.update', 'AdminUser', record.id, before, serialized);
+      const { password, totpSecret, ...rest } = input;
+      const nextTotpEnabled = input.totpEnabled ?? Boolean(record.totpEnabled);
+      const requestedTotpSecret =
+        totpSecret !== undefined ? normalizeNullableString(totpSecret) : normalizeNullableString(record.totpSecret);
+      const nextTotpSecret =
+        requestedTotpSecret ?? (nextTotpEnabled && record.username !== 'admin' ? generateTotpSecret() : null);
+      Object.assign(
+        record,
+        rest,
+        { totpEnabled: nextTotpEnabled, totpSecret: nextTotpSecret },
+        password ? { passwordHash: hashPassword(password) } : {},
+        { updatedAt: new Date() },
+      );
+      const serialized = serializeAdminUser(store, record, { includeTotpSecret: true });
+      audit(store, actor, 'adminUser.update', 'AdminUser', record.id, before, serializeAdminUser(store, record));
       return serialized;
     },
     deleteAdminUser: (idValue: string, actor?: Actor) => {
@@ -365,10 +393,33 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
         return record;
       }),
 
+    getSecuritySettings: () => effectiveSecuritySettings(store),
+    updateSecuritySettings: (input: Partial<SecuritySettingsRecord>, actor?: Actor) => {
+      const before = effectiveSecuritySettings(store);
+      const current = ensureSecuritySettings(store);
+      Object.assign(current, normalizeSecuritySettingsInput(input), {
+        id: securitySettingsId,
+        adminManaged: true,
+        updatedAt: new Date(),
+      });
+      const serialized = effectiveSecuritySettings(store);
+      audit(
+        store,
+        actor,
+        'security.update',
+        'SecuritySettings',
+        securitySettingsId,
+        redactSecuritySettings(before),
+        redactSecuritySettings(serialized),
+      );
+      return serialized;
+    },
+
     authenticateAdminUser: (
-      input: { identity: string; password: string },
+      input: { identity: string; password: string; safeEntry?: string; totpCode?: string },
       meta?: Pick<Actor, 'ip' | 'userAgent'>,
     ) => {
+      assertAdminSafeEntry(store, input.safeEntry);
       const identity = input.identity.trim().toLowerCase();
       const user = store.adminUsers.find(
         (candidate) =>
@@ -382,6 +433,8 @@ export function createMemoryCmsRepository(initialStore: CmsStore = createSeedDat
         error.name = 'UnauthorizedError';
         throw error;
       }
+
+      assertAdminTotp(store, user, input.totpCode);
 
       const accessToken = createAccessToken();
       const session = {
@@ -1832,6 +1885,7 @@ function defaultTdkTemplatesForPageType(pageType: PageType): {
 function normalizePersistedStore(store: CmsStore): CmsStore {
   const mutableStore = store as CmsStore & { liveReplays?: LiveReplayRecord[] };
   mutableStore.liveReplays ??= [];
+  ensureSecuritySettings(store);
   const deleteKeys = (record: object, keys: string[]) => {
     const mutable = record as Record<string, unknown>;
     keys.forEach((key) => {
@@ -1879,6 +1933,126 @@ function normalizePersistedStore(store: CmsStore): CmsStore {
   cleanupLegacyLiveReplayNews(store);
 
   return store;
+}
+
+function ensureSecuritySettings(store: CmsStore): SecuritySettingsRecord {
+  const mutableStore = store as CmsStore & { securitySettings?: SecuritySettingsRecord };
+  const envDefaults = envSecuritySettingsDefaults();
+  mutableStore.securitySettings ??= {
+    id: securitySettingsId,
+    adminSafeEntry: envDefaults.adminSafeEntry,
+    totpRequired: envDefaults.totpRequired,
+    totpSecret: envDefaults.totpSecret,
+    adminManaged: false,
+    updatedAt: new Date(),
+  };
+  const hadAdminManagedFlag = typeof mutableStore.securitySettings.adminManaged === 'boolean';
+  const isAdminManaged = hadAdminManagedFlag
+    ? Boolean(mutableStore.securitySettings.adminManaged)
+    : hasConfiguredSecurityValue(mutableStore.securitySettings);
+  mutableStore.securitySettings.id = securitySettingsId;
+  mutableStore.securitySettings.adminSafeEntry = normalizeSafeEntry(mutableStore.securitySettings.adminSafeEntry);
+  mutableStore.securitySettings.totpRequired = Boolean(mutableStore.securitySettings.totpRequired);
+  mutableStore.securitySettings.totpSecret = normalizeNullableString(mutableStore.securitySettings.totpSecret);
+  if (!isAdminManaged) {
+    mutableStore.securitySettings.adminSafeEntry = envDefaults.adminSafeEntry;
+    mutableStore.securitySettings.totpRequired = envDefaults.totpRequired;
+    mutableStore.securitySettings.totpSecret = envDefaults.totpSecret;
+  }
+  mutableStore.securitySettings.adminManaged = isAdminManaged;
+  mutableStore.securitySettings.updatedAt = mutableStore.securitySettings.updatedAt ?? new Date();
+  return mutableStore.securitySettings;
+}
+
+function effectiveSecuritySettings(store: CmsStore): SecuritySettingsRecord {
+  return ensureSecuritySettings(store);
+}
+
+function envSecuritySettingsDefaults(): Pick<SecuritySettingsRecord, 'adminSafeEntry' | 'totpRequired' | 'totpSecret'> {
+  const envSafeEntry = normalizeSafeEntry(process.env.ADMIN_SAFE_ENTRY);
+  const envTotpSecret = normalizeNullableString(process.env.ADMIN_TOTP_SECRET);
+  const envTotpRequired = process.env.ADMIN_TOTP_REQUIRED;
+  return {
+    adminSafeEntry: envSafeEntry,
+    totpRequired: booleanEnv(envTotpRequired) ?? Boolean(envTotpSecret),
+    totpSecret: envTotpSecret,
+  };
+}
+
+function hasConfiguredSecurityValue(settings: Partial<SecuritySettingsRecord>): boolean {
+  return Boolean(
+    normalizeSafeEntry(settings.adminSafeEntry) ||
+      normalizeNullableString(settings.totpSecret) ||
+      settings.totpRequired,
+  );
+}
+
+function redactSecuritySettings(settings: SecuritySettingsRecord): SecuritySettingsRecord & { totpSecretConfigured: boolean } {
+  return {
+    ...settings,
+    totpSecret: null,
+    totpSecretConfigured: Boolean(settings.totpSecret),
+  };
+}
+
+function normalizeSecuritySettingsInput(input: Partial<SecuritySettingsRecord>): Partial<SecuritySettingsRecord> {
+  return {
+    ...(input.adminSafeEntry !== undefined ? { adminSafeEntry: normalizeSafeEntry(input.adminSafeEntry) } : {}),
+    ...(input.totpRequired !== undefined ? { totpRequired: Boolean(input.totpRequired) } : {}),
+    ...(input.totpSecret !== undefined ? { totpSecret: normalizeNullableString(input.totpSecret) } : {}),
+  };
+}
+
+function assertAdminSafeEntry(store: CmsStore, safeEntry?: string): void {
+  const requiredEntry = effectiveSecuritySettings(store).adminSafeEntry;
+  if (!requiredEntry) {
+    return;
+  }
+  if (normalizeSafeEntry(safeEntry) !== requiredEntry) {
+    const error = new Error('安全入口不正确。');
+    error.name = 'UnauthorizedError';
+    throw error;
+  }
+}
+
+function assertAdminTotp(store: CmsStore, user: AdminUserRecord, code?: string): void {
+  const settings = effectiveSecuritySettings(store);
+  const requiresTotp = settings.totpRequired || Boolean(user.totpEnabled);
+  if (!requiresTotp) {
+    return;
+  }
+  const userSecret = user.totpEnabled ? normalizeNullableString(user.totpSecret) : null;
+  const secret = userSecret ?? settings.totpSecret;
+  if (!secret || !safeVerifyTotpCode(secret, code)) {
+    const error = new Error('Google 验证码不正确。');
+    error.name = 'UnauthorizedError';
+    throw error;
+  }
+}
+
+function safeVerifyTotpCode(secret: string, code?: string): boolean {
+  try {
+    return verifyTotpCode({ secret, code });
+  } catch {
+    return false;
+  }
+}
+
+function normalizeSafeEntry(value?: string | null): string | null {
+  const trimmed = normalizeNullableString(value);
+  return trimmed && /^[A-Za-z0-9_-]{3,80}$/.test(trimmed) ? trimmed : null;
+}
+
+function normalizeNullableString(value?: string | null): string | null {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function booleanEnv(value?: string): boolean | undefined {
+  if (value === undefined || value.trim() === '') return undefined;
+  if (/^(1|true|yes|on)$/i.test(value)) return true;
+  if (/^(0|false|no|off)$/i.test(value)) return false;
+  return undefined;
 }
 
 function normalizeSingleSiteContentOwnership(store: CmsStore): void {
@@ -2731,7 +2905,11 @@ function findRecord<T extends { id: string }>(records: T[], idValue: string): T 
   return record;
 }
 
-function serializeAdminUser(store: CmsStore, user: AdminUserRecord): AdminUserPublicRecord {
+function serializeAdminUser(
+  store: CmsStore,
+  user: AdminUserRecord,
+  options: { includeTotpSecret?: boolean } = {},
+): AdminUserPublicRecord {
   const roles = user.roleIds
     .map((roleId) => store.adminRoles.find((role) => role.id === roleId && !role.deletedAt && role.status === 'ACTIVE'))
     .filter((role): role is AdminRoleRecord => Boolean(role));
@@ -2747,11 +2925,13 @@ function serializeAdminUser(store: CmsStore, user: AdminUserRecord): AdminUserPu
         .filter((action) => activePermissionActions.has(action)),
     ),
   );
-  const { passwordHash, ...safeUser } = user;
+  const { passwordHash, totpSecret, ...safeUser } = user;
   void passwordHash;
 
   return {
     ...safeUser,
+    ...(options.includeTotpSecret ? { totpSecret: normalizeNullableString(totpSecret) } : {}),
+    totpSecretConfigured: Boolean(normalizeNullableString(totpSecret)),
     roles,
     permissions,
   };

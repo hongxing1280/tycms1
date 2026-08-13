@@ -19,6 +19,7 @@ import type {
   SportLeagueRecord,
   SportMatchRecord,
   SportTeamRecord,
+  SecuritySettingsRecord,
   TagRecord,
   PageType,
   TdkConfigRecord,
@@ -52,6 +53,7 @@ export type CmsStore = {
   scheduledTasks: ScheduledTaskRecord[];
   invalidationJobs: CacheInvalidationJobRecord[];
   auditLogs: AuditLogRecord[];
+  securitySettings: SecuritySettingsRecord;
 };
 
 const now = new Date('2026-05-13T10:00:00.000Z');
@@ -245,12 +247,21 @@ export function createSeedData(): CmsStore {
     scheduledTasks,
     invalidationJobs: [],
     auditLogs: [],
+    securitySettings: {
+      id: 'security-settings',
+      adminSafeEntry: null,
+      totpRequired: false,
+      totpSecret: null,
+      adminManaged: false,
+      updatedAt: now,
+    },
   };
 }
 
 function createAdminPermissions(): AdminPermissionRecord[] {
   const permissions = [
     ['perm-admin-access', 'admin:access', '进入后台', '账号权限', '允许登录并访问体育站群后台。'],
+    ['perm-security-write', 'security:write', '安全设置', '账号权限', '修改后台安全入口和 Google 验证器配置。'],
     ['perm-user-read', 'user:read', '查看用户', '账号权限', '查看后台用户列表和用户资料。'],
     ['perm-user-write', 'user:write', '管理用户', '账号权限', '新增、编辑、禁用和删除后台用户。'],
     ['perm-role-read', 'role:read', '查看角色', '账号权限', '查看角色和角色授权范围。'],

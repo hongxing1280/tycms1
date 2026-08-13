@@ -65,6 +65,7 @@ export function AdminLayout({ children, user, onLogout }: AdminLayoutProps) {
     {
       title: '系统管理',
       items: [
+        { label: '安全设置', href: '/security-settings', icon: '🔐' },
         { label: '用户管理', href: '/users', icon: '👤' },
         { label: '角色管理', href: '/roles', icon: '🔑' },
         { label: '权限管理', href: '/permissions', icon: '🛡️' },

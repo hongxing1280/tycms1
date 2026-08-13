@@ -30,7 +30,7 @@ type AdminContextType = {
   status: string;
   setStatus: (status: string) => void;
   isBooting: boolean;
-  login: (identity: string, password: string) => Promise<void>;
+  login: (identity: string, password: string, options?: { safeEntry?: string; totpCode?: string }) => Promise<void>;
   logout: () => Promise<void>;
   apiBaseUrl: string;
 };
@@ -75,12 +75,12 @@ export function AdminProvider({ children, apiBaseUrl }: { children: React.ReactN
     }
   }, [apiBaseUrl]);
 
-  const login = async (identity: string, password: string) => {
+  const login = async (identity: string, password: string, options: { safeEntry?: string; totpCode?: string } = {}) => {
     setStatus('');
     const response = await fetch(`${apiBaseUrl}/admin/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identity, password }),
+      body: JSON.stringify({ identity, password, safeEntry: options.safeEntry, totpCode: options.totpCode }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || '登录失败');

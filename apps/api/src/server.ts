@@ -43,6 +43,7 @@ import {
   signalSourceNameUpdateSchema,
   scheduledTaskCreateSchema,
   scheduledTaskUpdateSchema,
+  securitySettingsUpdateSchema,
   siteCreateSchema,
   siteUpdateSchema,
   teamCreateSchema,
@@ -227,6 +228,21 @@ export function createApiServer(options: { logger?: boolean; scheduler?: boolean
     return token ? cmsRepository.revokeAdminSession(token, actor) : { ok: true };
   });
 
+  app.get('/admin/security-settings', async (request) => {
+    const actor = getActor(request);
+    assertPermission(actor, 'security:write');
+    return sanitizeSecuritySettings(cmsRepository.getSecuritySettings(), { includeTotpSecret: true });
+  });
+
+  app.patch('/admin/security-settings/:id', async (request) => {
+    const actor = getActor(request);
+    assertPermission(actor, 'security:write');
+    return sanitizeSecuritySettings(
+      cmsRepository.updateSecuritySettings(securitySettingsUpdateSchema.parse(request.body), actor),
+      { includeTotpSecret: true },
+    );
+  });
+
   app.post('/admin/uploads/images', async (request) => {
     const actor = getActor(request);
     assertPermission(actor, 'news:write');
@@ -236,7 +252,13 @@ export function createApiServer(options: { logger?: boolean; scheduler?: boolean
   app.get('/admin/users', async (request) => {
     const actor = getActor(request);
     assertPermission(actor, 'user:read');
-    return paginated(request.query, cmsRepository.listAdminUsers(allRowsOptions));
+    return paginated(
+      request.query,
+      cmsRepository.listAdminUsers({
+        ...allRowsOptions,
+        includeTotpSecret: actor.permissions.includes('user:write') || actor.permissions.includes('security:write'),
+      }),
+    );
   });
   app.post('/admin/users', async (request) => {
     const actor = getActor(request);
@@ -3667,6 +3689,21 @@ function promotionQuery(input: unknown): {
 function parsePositiveInteger(value: unknown): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
+}
+
+function sanitizeSecuritySettings(
+  settings: unknown,
+  options: { includeTotpSecret?: boolean } = {},
+): unknown {
+  if (!settings || typeof settings !== 'object') {
+    return settings;
+  }
+  const record = settings as Record<string, unknown>;
+  return {
+    ...record,
+    totpSecret: options.includeTotpSecret ? record.totpSecret : '',
+    totpSecretConfigured: Boolean(record.totpSecret),
+  };
 }
 
 function isPromotionSlot(

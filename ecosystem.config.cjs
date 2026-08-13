@@ -36,7 +36,7 @@ module.exports = {
       args: 'start --hostname 127.0.0.1 --port 3001',
       env: {
         NODE_ENV: 'production',
-        API_URL: '/api',
+        API_URL: process.env.API_URL || 'http://api.pubcms.com',
       },
       max_memory_restart: '768M',
       autorestart: true,

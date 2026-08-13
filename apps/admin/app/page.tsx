@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default function AdminHome() {
+  const securitySettings = cmsRepository.getSecuritySettings();
+  const configuredSafeEntry = securitySettings.adminSafeEntry || '';
   const metrics = [
     { label: '用户', value: cmsRepository.store.adminUsers.filter((user) => !user.deletedAt).length, icon: '👤' },
     { label: '角色', value: cmsRepository.store.adminRoles.filter((role) => !role.deletedAt).length, icon: '🔑' },
@@ -14,7 +16,7 @@ export default function AdminHome() {
   ];
 
   return (
-    <AdminApp>
+    <AdminApp allowLogin={!configuredSafeEntry}>
       <div className="stats-grid">
         {metrics.map((metric) => (
           <div className="stat-card" key={metric.label}>

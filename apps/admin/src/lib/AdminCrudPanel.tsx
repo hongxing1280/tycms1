@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, CSSProperties } from 'react';
+import QRCode from 'qrcode';
 import { useAdmin } from './AdminContext';
 
 type FieldType =
@@ -151,6 +152,7 @@ const scheduledTaskTypeOptions = [
 
 const adminPageSize = 20;
 const referencePageSize = 100;
+const totpAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 const pageTypeOptions: FieldOption[] = [
   { label: '首页', value: 'HOME' },
@@ -272,6 +274,18 @@ const fieldMeta: Record<string, Partial<FieldConfig>> = {
   email: { label: '邮箱' },
   displayName: { label: '显示名称' },
   password: { label: '登录密码', type: 'text' },
+  totpEnabled: { label: '启用账号 Google 验证', type: 'checkbox' },
+  totpSecret: {
+    label: 'Google 验证器密钥',
+    type: 'text',
+    help: 'Base32 密钥；可扫码绑定，也可手动填入验证器。保存后会持久保留，除非你再次修改。',
+  },
+  adminSafeEntry: {
+    label: '后台安全入口',
+    help: '只填路径片段，例如 secure-admin；设置后登录入口为 /secure-admin，留空则关闭安全入口。',
+  },
+  totpRequired: { label: '全局强制 Google 验证', type: 'checkbox' },
+  totpSecretConfigured: { label: '密钥状态' },
   roleIds: { label: '角色', type: 'multiselect', help: '从已有角色中选择，可多选。' },
   key: { label: 'Key' },
   label: { label: '显示名称' },
@@ -497,6 +511,21 @@ const referenceConfigs: Record<string, ReferenceConfig> = {
 
 const modules: ModuleConfig[] = [
   {
+    key: 'security-settings',
+    group: '账号权限',
+    label: '安全设置',
+    endpoint: '/admin/security-settings',
+    permission: 'security:write',
+    summary: '设置后台安全入口和 Google 验证器；环境变量只作为首次初始化，后台保存后以后台配置为准。',
+    listFields: ['ID', '安全入口', '强制 Google 验证', '密钥状态', '更新时间'],
+    sample: {
+      id: 'security-settings',
+      adminSafeEntry: 'secure-admin',
+      totpRequired: false,
+      totpSecret: '',
+    },
+  },
+  {
     key: 'users',
     group: '账号权限',
     label: '用户管理',
@@ -504,12 +533,14 @@ const modules: ModuleConfig[] = [
     permission: 'user:write',
     readPermission: 'user:read',
     summary: '新增、编辑、禁用、删除后台账号；给不同用户分配角色。',
-    listFields: ['ID', '用户名', '邮箱', '显示名称', '状态', '角色', '最后登录', '创建时间'],
+    listFields: ['ID', '用户名', '邮箱', '显示名称', 'Google 验证', '密钥状态', '状态', '角色', '最后登录', '创建时间'],
     sample: {
       username: 'matchops',
       email: 'matchops@sports.local',
       displayName: '赛事运营',
       password: 'MatchOps123',
+      totpEnabled: false,
+      totpSecret: '',
       status: 'ACTIVE',
       roleIds: ['role-site-admin'],
     },
@@ -1483,6 +1514,11 @@ export function AdminCrudPanel(props: { activeModuleKey?: string }) {
   }
 
   function openCreateModal(defaultValues?: Partial<FormValues>) {
+    if (active.key === 'security-settings') {
+      const row = tableRows[0] ?? { id: 'security-settings', ...active.sample };
+      openEditModal(row);
+      return;
+    }
     setRecordId('');
     const baseValues = initialFormValues(fields, active.sample);
     if (defaultValues) {
@@ -1519,6 +1555,13 @@ export function AdminCrudPanel(props: { activeModuleKey?: string }) {
   }
 
   async function submitModal() {
+    if (active.key === 'security-settings') {
+      const ok = await request('PATCH', `${active.endpoint}/security-settings`);
+      if (ok) {
+        setModalMode(null);
+      }
+      return;
+    }
     const ok = modalMode === 'create' ? await request('POST') : await request('PATCH');
     if (ok) {
       setModalMode(null);
@@ -1657,7 +1700,7 @@ export function AdminCrudPanel(props: { activeModuleKey?: string }) {
                   刷新列表
                 </button>
                 <button className="btn btn-primary" style={{ height: '36px' }} disabled={!canWrite} onClick={() => openCreateModal()}>
-                  新增记录
+                  {active.key === 'security-settings' ? '修改设置' : '新增记录'}
                 </button>
                 <button className="btn btn-danger" style={{ height: '36px' }} disabled={!selectedIds.length || !canWrite} onClick={bulkDelete}>
                   删除选中
@@ -2221,11 +2264,13 @@ function CrudModal(props: {
   const isSiteModule = props.moduleKey === 'sites';
   const isTdkModule = props.moduleKey === 'tdk-configs';
   const isUrlModule = props.moduleKey === 'url-configs';
+  const isSecurityModule = props.moduleKey === 'security-settings';
   const [activeTab, setActiveTab] = useState(siteFormTabs[0].key);
   const tabConfig = siteFormTabs.find((tab) => tab.key === activeTab) ?? siteFormTabs[0];
   const visibleFields = visibleModalFields(props.fields, {
     isSiteModule,
     isTdkModule,
+    isSecurityModule,
     tabConfig,
   });
   const isSeoModule = isTdkModule || isUrlModule;
@@ -2233,14 +2278,20 @@ function CrudModal(props: {
   return (
     <div aria-labelledby="crud-modal-title" aria-modal="true" className="modal-backdrop" onClick={props.onClose} role="dialog">
       <div
-        className={`drawer-panel ${isSiteModule ? 'site-editor-modal' : ''} ${isSeoModule ? 'seo-config-modal' : ''}`}
+        className={`drawer-panel ${isSiteModule ? 'site-editor-modal' : ''} ${isSeoModule ? 'seo-config-modal' : ''} ${isSecurityModule ? 'security-settings-modal' : ''}`}
         style={{ maxWidth: isSiteModule || isSeoModule ? '1620px' : '800px', maxHeight: '85vh', borderRadius: '12px', margin: 'auto', animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="drawer-header">
           <div>
             <h2 id="crud-modal-title">{title}</h2>
-            {props.mode === 'edit' ? <p>正在修改已选记录，保存后表格会自动刷新。</p> : <p>填写字段后提交，成功后表格会自动刷新。</p>}
+            {isSecurityModule ? (
+              <p>这里修改的是全局安全配置，不是新增记录。保存后会立即影响登录入口和验证码校验。</p>
+            ) : props.mode === 'edit' ? (
+              <p>正在修改已选记录，保存后表格会自动刷新。</p>
+            ) : (
+              <p>填写字段后提交，成功后表格会自动刷新。</p>
+            )}
           </div>
           <button aria-label="关闭弹窗" className="drawer-close" onClick={props.onClose} type="button">
             ×
@@ -2263,6 +2314,12 @@ function CrudModal(props: {
             </div>
           ) : null}
           {isSiteModule ? <p className="site-modal-tab-desc">{tabConfig.description}</p> : null}
+          {isSecurityModule ? (
+            <div className="security-settings-note">
+              <strong>两种绑定方式：</strong>
+              <span>可以直接扫码，也可以把密钥手动填进验证器。安全设置这里是修改现有配置，不是新增一条记录。</span>
+            </div>
+          ) : null}
           {isSeoModule ? (
             <div className="seo-config-layout">
               <SeoConfigHelpPanel type={isTdkModule ? 'tdk' : 'url'} />
@@ -2275,6 +2332,8 @@ function CrudModal(props: {
                       value={props.formValues[field.name] ?? ''}
                       onChange={(value) => props.onChange(field.name, value)}
                       onUploadImage={props.onUploadImage}
+                      formValues={props.formValues}
+                      moduleKey={props.moduleKey}
                     />
                   ))}
                 </div>
@@ -2289,6 +2348,8 @@ function CrudModal(props: {
                   value={props.formValues[field.name] ?? ''}
                   onChange={(value) => props.onChange(field.name, value)}
                   onUploadImage={props.onUploadImage}
+                  formValues={props.formValues}
+                  moduleKey={props.moduleKey}
                 />
               ))}
             </div>
@@ -2312,9 +2373,14 @@ function visibleModalFields(
   input: {
     isSiteModule: boolean;
     isTdkModule: boolean;
+    isSecurityModule: boolean;
     tabConfig: FormTabConfig;
   },
 ): FieldConfig[] {
+  if (input.isSecurityModule) {
+    return fields.filter((field) => field.name !== 'id');
+  }
+
   if (input.isSiteModule) {
     return input.tabConfig.fields
       .map((name) => fields.find((field) => field.name === name))
@@ -2383,6 +2449,8 @@ function FormField(props: {
   field: FieldConfig;
   value: string | boolean;
   onChange: (value: string | boolean) => void;
+  formValues?: FormValues;
+  moduleKey?: string;
   onUploadImage?: (file: File) => Promise<string>;
 }) {
   const { field, value, onChange, onUploadImage } = props;
@@ -2526,6 +2594,18 @@ function FormField(props: {
     );
   }
 
+  if (field.name === 'totpSecret') {
+    return (
+      <TotpSecretField
+        field={field}
+        formValues={props.formValues}
+        moduleKey={props.moduleKey}
+        onChange={onChange}
+        value={value}
+      />
+    );
+  }
+
   return (
     <div className="form-group">
       <label className="form-label">{field.label}</label>
@@ -2564,6 +2644,105 @@ function FormField(props: {
           value={String(value)}
         />
       )}
+      {field.help ? <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '6px 0 0' }}>{field.help}</p> : null}
+    </div>
+  );
+}
+
+function TotpSecretField(props: {
+  field: FieldConfig;
+  value: string | boolean;
+  onChange: (value: string | boolean) => void;
+  formValues?: FormValues;
+  moduleKey?: string;
+}) {
+  const { field, value, onChange } = props;
+  const secret = normalizeTotpSecretInput(String(value));
+  const accountName =
+    props.moduleKey === 'users'
+      ? String(props.formValues?.username || props.formValues?.email || 'user')
+      : 'admin';
+  const otpAuthUri = buildOtpAuthUri(secret, accountName);
+  const [totpQrCode, setTotpQrCode] = useState('');
+
+  useEffect(() => {
+    if (!otpAuthUri) {
+      setTotpQrCode('');
+      return;
+    }
+    let alive = true;
+    QRCode.toDataURL(otpAuthUri, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 180,
+      color: {
+        dark: '#111111',
+        light: '#ffffff',
+      },
+    })
+      .then((dataUrl: string) => {
+        if (alive) {
+          setTotpQrCode(dataUrl);
+        }
+      })
+      .catch(() => {
+        if (alive) {
+          setTotpQrCode('');
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [otpAuthUri]);
+
+  return (
+    <div className="form-group">
+      <label className="form-label">{field.label}</label>
+      <input
+        className="form-input"
+        onChange={(event) => onChange(normalizeTotpSecretInput(event.target.value))}
+        placeholder={field.placeholder ?? 'JBSWY3DPEHPK3PXP'}
+        type="text"
+        value={secret}
+      />
+      <div className="image-upload-row">
+        <button className="btn btn-secondary" onClick={() => onChange(generateBrowserTotpSecret())} type="button">
+          生成密钥
+        </button>
+        <button
+          className="btn btn-secondary"
+          disabled={!otpAuthUri}
+          onClick={() => {
+            navigator.clipboard?.writeText(otpAuthUri).catch(() => undefined);
+          }}
+          type="button"
+        >
+          复制绑定地址
+        </button>
+        <button className="btn btn-secondary" onClick={() => onChange('')} type="button">
+          清空
+        </button>
+      </div>
+      <div className="security-settings-qr-card totp-field-card">
+        <div className="security-settings-qr-head">
+          <h3>扫码绑定</h3>
+          <p>Google Authenticator、Microsoft Authenticator、Aegis 都可以直接扫。</p>
+        </div>
+        <div className="security-settings-qr-body">
+          {totpQrCode ? (
+            <img alt="Google 验证器二维码" className="security-settings-qr" src={totpQrCode} />
+          ) : (
+            <div className="security-settings-qr-empty">先填写密钥，二维码会自动生成</div>
+          )}
+          <div className="security-settings-qr-meta">
+            <div className="security-settings-qr-label">手动密钥</div>
+            <div className="security-settings-secret">{secret || '未生成'}</div>
+            <div className="security-settings-qr-label">绑定地址</div>
+            <div className="security-settings-otp-uri">{otpAuthUri || 'otpauth://totp/...'}</div>
+          </div>
+        </div>
+      </div>
+      {otpAuthUri ? <input className="form-input" readOnly style={{ marginTop: '8px' }} value={otpAuthUri} /> : null}
       {field.help ? <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '6px 0 0' }}>{field.help}</p> : null}
     </div>
   );
@@ -3619,7 +3798,12 @@ function buildFields(module: ModuleConfig, dynamicOptions: DynamicOptions): Fiel
           : meta.help,
       options,
       allowEmpty: reference?.allowEmpty || isSeoConfigScopeField,
-      emptyValue: isSeoConfigScopeField ? null : undefined,
+      emptyValue:
+        isSeoConfigScopeField
+          ? null
+          : module.key === 'security-settings' && ['adminSafeEntry', 'totpSecret'].includes(name)
+            ? ''
+            : undefined,
     };
   });
 }
@@ -3768,6 +3952,27 @@ function toggleValue(values: string[], value: string, checked: boolean): string[
   return checked ? unique([...values, value]) : values.filter((item) => item !== value);
 }
 
+function generateBrowserTotpSecret(length = 32): string {
+  const bytes = new Uint8Array(length);
+  window.crypto.getRandomValues(bytes);
+  let output = '';
+  for (const byte of bytes) {
+    output += totpAlphabet[byte % totpAlphabet.length];
+  }
+  return output;
+}
+
+function normalizeTotpSecretInput(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z2-7]/g, '').slice(0, 128);
+}
+
+function buildOtpAuthUri(secret: string, account = 'admin'): string {
+  if (!secret) return '';
+  const issuer = 'Sports CMS';
+  const label = `${issuer}:${account.trim() || 'admin'}`;
+  return `otpauth://totp/${encodeURIComponent(label)}?secret=${encodeURIComponent(secret)}&issuer=${encodeURIComponent(issuer)}`;
+}
+
 function initialFormValues(fields: FieldConfig[], sample: Record<string, unknown>): FormValues {
   return fields.reduce<FormValues>((values, field) => {
     values[field.name] = formatFieldValue(field, sample[field.name]);
@@ -3862,8 +4067,9 @@ function toDatetimeLocal(value: string): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-const hiddenTableColumns = new Set(['password', 'passwordHash', 'rawPayload', 'randomProductNames']);
+const hiddenTableColumns = new Set(['password', 'passwordHash', 'totpSecret', 'rawPayload', 'randomProductNames']);
 const hiddenTableColumnsByModule: Record<string, Set<string>> = {
+  'security-settings': new Set(['adminManaged']),
   sites: new Set(['urlConfigId', 'tdkConfigId', 'showSignalSources', 'seoIndexStatus', 'baiduPushToken', 'remark']),
   groups: new Set([
     'remark',

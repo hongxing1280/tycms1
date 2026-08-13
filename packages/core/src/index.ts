@@ -5,4 +5,5 @@ export * from './site-resolver';
 export * from './signal-links';
 export * from './tdk-resolver';
 export * from './types';
+export * from './totp';
 export * from './url-builder';
